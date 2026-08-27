@@ -1,0 +1,28 @@
+__pycache__/
+*.pyc
+
+.venv/
+venv/
+env/
+
+.ipynb_checkpoints/
+
+# Model files
+models/codebert_model/
+models/codebert_results/
+*.pt
+*.pth
+*.bin
+*.safetensors
+
+# Dataset/model generated files
+dataset/processed/*.pkl
+
+# Python cache
+.pytest_cache/
+
+# VS Code
+.vscode/
+
+# Environment
+.env
