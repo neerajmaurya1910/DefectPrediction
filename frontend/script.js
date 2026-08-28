@@ -48,9 +48,7 @@ console.log("Analyze URL:", ANALYZE_URL);
 // ============================================================
 
 function updateCharacterCount() {
-
     const length = codeInput.value.length;
-
     characterCount.textContent = `${length} characters`;
 }
 
@@ -60,18 +58,13 @@ updateCharacterCount();
 
 
 // ============================================================
-// CLEAR BUTTON
+// CLEAR / RESET RESULTS
 // ============================================================
+// Used both by the "Clear" button and right before a new
+// analysis request is sent, so no result from a previous
+// run is ever left on screen.
 
-clearButton.addEventListener("click", function () {
-
-    codeInput.value = "";
-
-    updateCharacterCount();
-
-    resultsSection.classList.add("hidden");
-
-    errorMessage.classList.add("hidden");
+function clearResults() {
 
     predictionLabel.textContent = "-";
 
@@ -81,10 +74,25 @@ clearButton.addEventListener("click", function () {
 
     issueCount.textContent = "0 Issues";
 
-    issuesContainer.innerHTML = "";
+    // Remove all previously rendered issue cards
+    while (issuesContainer.firstChild) {
+        issuesContainer.removeChild(issuesContainer.firstChild);
+    }
 
     noIssues.classList.add("hidden");
+}
 
+clearButton.addEventListener("click", function () {
+
+    codeInput.value = "";
+
+    updateCharacterCount();
+
+    hideError();
+
+    resultsSection.classList.add("hidden");
+
+    clearResults();
 });
 
 
@@ -128,7 +136,7 @@ async function checkBackend() {
 
 
 // ============================================================
-// SHOW ERROR
+// SHOW / HIDE ERROR
 // ============================================================
 
 function showError(message) {
@@ -137,11 +145,6 @@ function showError(message) {
 
     errorMessage.classList.remove("hidden");
 }
-
-
-// ============================================================
-// HIDE ERROR
-// ============================================================
 
 function hideError() {
 
@@ -198,9 +201,7 @@ async function analyzeCode() {
     // --------------------------------------------------------
 
     if (!code) {
-
         showError("Please enter Java code before analyzing.");
-
         return;
     }
 
@@ -208,6 +209,15 @@ async function analyzeCode() {
     console.log("Sending Java code to backend...");
     console.log("URL:", ANALYZE_URL);
     console.log("Code:", code);
+
+    // --------------------------------------------------------
+    // Reset/hide the previous result BEFORE sending the new
+    // request, so nothing stale from the last run is visible
+    // while we wait for the backend.
+    // --------------------------------------------------------
+
+    resultsSection.classList.add("hidden");
+    clearResults();
 
     setLoading(true);
 
@@ -231,20 +241,23 @@ async function analyzeCode() {
 
         });
 
-
         console.log("HTTP Status:", response.status);
-
 
         // ----------------------------------------------------
         // GET RESPONSE
         // ----------------------------------------------------
 
-        const data = await response.json();
+        let data;
+
+        try {
+            data = await response.json();
+        } catch (parseError) {
+            throw new Error("Received an invalid response from the backend.");
+        }
 
         console.log("==============================");
         console.log("BACKEND RESPONSE:");
         console.log(data);
-
 
         // ----------------------------------------------------
         // CHECK HTTP ERROR
@@ -259,7 +272,6 @@ async function analyzeCode() {
             );
         }
 
-
         // ----------------------------------------------------
         // CHECK SUCCESS
         // ----------------------------------------------------
@@ -271,7 +283,6 @@ async function analyzeCode() {
                 "Analysis failed."
             );
         }
-
 
         // ----------------------------------------------------
         // DISPLAY BACKEND DATA
@@ -288,9 +299,12 @@ async function analyzeCode() {
         console.error("ANALYSIS ERROR:");
         console.error(error);
 
+        const isNetworkError = error instanceof TypeError;
+
         showError(
-            "Unable to analyze the code. " +
-            error.message
+            isNetworkError
+                ? `Unable to connect to the backend. Make sure FastAPI is running at ${API_BASE_URL}.`
+                : "Unable to analyze the code. " + error.message
         );
 
     } finally {
@@ -308,13 +322,11 @@ function displayResults(data) {
 
     console.log("Backend data received:", data);
 
-
     // --------------------------------------------------------
     // SHOW RESULTS SECTION
     // --------------------------------------------------------
 
     resultsSection.classList.remove("hidden");
-
 
     // --------------------------------------------------------
     // GET PREDICTION
@@ -324,15 +336,23 @@ function displayResults(data) {
 
     const label = prediction.label || "Unknown";
 
-    const confidence = Number(
-        prediction.confidence || 0
-    );
+    let confidence = Number(prediction.confidence);
 
+    if (!Number.isFinite(confidence)) {
+        confidence = 0;
+    }
+
+    // The backend already returns confidence as a 0-100 percent
+    // value (see predict_defect() in backend/app.py, which does
+    // round(probability * 100, 2)). Only scale up if a backend
+    // change ever starts returning a 0-1 decimal instead.
+    if (confidence > 0 && confidence <= 1) {
+        confidence = confidence * 100;
+    }
 
     console.log("Prediction:", prediction);
     console.log("Label:", label);
     console.log("Confidence:", confidence);
-
 
     // --------------------------------------------------------
     // DISPLAY CWE LABEL
@@ -340,27 +360,19 @@ function displayResults(data) {
 
     predictionLabel.textContent = label;
 
-
     // --------------------------------------------------------
     // DISPLAY CONFIDENCE
     // --------------------------------------------------------
 
-    confidenceValue.textContent =
-        `${confidence.toFixed(2)}%`;
-
+    confidenceValue.textContent = `${confidence.toFixed(2)}%`;
 
     // --------------------------------------------------------
     // CONFIDENCE PROGRESS BAR
     // --------------------------------------------------------
 
-    const safeConfidence = Math.max(
-        0,
-        Math.min(100, confidence)
-    );
+    const safeConfidence = Math.max(0, Math.min(100, confidence));
 
-    confidenceBar.style.width =
-        `${safeConfidence}%`;
-
+    confidenceBar.style.width = `${safeConfidence}%`;
 
     // --------------------------------------------------------
     // STATIC ANALYSIS
@@ -370,12 +382,7 @@ function displayResults(data) {
         ? data.static_analysis
         : [];
 
-
-    console.log(
-        "Static analysis issues:",
-        issues
-    );
-
+    console.log("Static analysis issues:", issues);
 
     displayStaticAnalysis(issues);
 }
@@ -387,10 +394,11 @@ function displayResults(data) {
 
 function displayStaticAnalysis(issues) {
 
-    // Clear old issues
-
-    issuesContainer.innerHTML = "";
-
+    // Clear old issues (defensive - already cleared before the
+    // request was sent, but never render on top of stale cards)
+    while (issuesContainer.firstChild) {
+        issuesContainer.removeChild(issuesContainer.firstChild);
+    }
 
     // --------------------------------------------------------
     // ISSUE COUNT
@@ -399,118 +407,75 @@ function displayStaticAnalysis(issues) {
     issueCount.textContent =
         `${issues.length} ${issues.length === 1 ? "Issue" : "Issues"}`;
 
-
     // --------------------------------------------------------
     // NO ISSUES
     // --------------------------------------------------------
 
     if (issues.length === 0) {
-
         noIssues.classList.remove("hidden");
-
         return;
     }
 
-
     noIssues.classList.add("hidden");
 
-
     // --------------------------------------------------------
-    // CREATE ISSUE CARDS
+    // CREATE ISSUE CARDS (built with safe DOM APIs, not
+    // innerHTML, since these strings come straight from the
+    // backend and must never be interpreted as HTML)
     // --------------------------------------------------------
 
-    issues.forEach((issue, index) => {
+    const KNOWN_SEVERITIES = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
 
-        const issueCard =
-            document.createElement("div");
+    issues.forEach((issue) => {
 
-        issueCard.className =
-            "issue-item";
-
-
-        // ----------------------------------------------------
-        // ISSUE TYPE
-        // ----------------------------------------------------
-
-        const type =
-            issue.type ||
-            issue.title ||
-            "Unknown Issue";
-
-
-        // ----------------------------------------------------
-        // ISSUE MESSAGE
-        // ----------------------------------------------------
+        const type = issue.type || issue.title || "Unknown Issue";
 
         const message =
-            issue.message ||
-            issue.description ||
-            "No description available.";
+            issue.message || issue.description || "No description available.";
 
-
-        // ----------------------------------------------------
-        // DETERMINE SEVERITY
-        // ----------------------------------------------------
-
+        // Use the backend's own severity field when present.
+        // Only fall back to a neutral default if the backend
+        // did not provide one at all - never invent/override
+        // a severity the backend already computed.
         let severity = "LOW";
 
-        if (
-            type.toLowerCase().includes("security") ||
-            type.toLowerCase().includes("null") ||
-            type.toLowerCase().includes("vulnerability")
-        ) {
-
-            severity = "MEDIUM";
+        if (typeof issue.severity === "string" && issue.severity.trim()) {
+            severity = issue.severity.trim().toUpperCase();
         }
 
+        const severityClass = KNOWN_SEVERITIES.includes(severity)
+            ? severity.toLowerCase()
+            : "low";
 
-        // ----------------------------------------------------
-        // CREATE HTML
-        // ----------------------------------------------------
+        const issueCard = document.createElement("div");
+        issueCard.className = "issue-item";
 
-        issueCard.innerHTML = `
+        const issueContent = document.createElement("div");
+        issueContent.className = "issue-content";
 
-            <div class="issue-content">
+        const issueTop = document.createElement("div");
+        issueTop.className = "issue-top";
 
-                <div class="issue-top">
+        const typeHeading = document.createElement("h3");
+        typeHeading.textContent = type;
 
-                    <h3>
-                        ${escapeHtml(type)}
-                    </h3>
+        const severityBadge = document.createElement("span");
+        severityBadge.className = `severity ${severityClass}`;
+        severityBadge.textContent = severity;
 
-                    <span class="severity ${severity.toLowerCase()}">
-                        ${severity}
-                    </span>
+        issueTop.appendChild(typeHeading);
+        issueTop.appendChild(severityBadge);
 
-                </div>
+        const messageParagraph = document.createElement("p");
+        messageParagraph.textContent = message;
 
-                <p>
-                    ${escapeHtml(message)}
-                </p>
+        issueContent.appendChild(issueTop);
+        issueContent.appendChild(messageParagraph);
 
-            </div>
-
-        `;
-
+        issueCard.appendChild(issueContent);
 
         issuesContainer.appendChild(issueCard);
-
     });
-
-}
-
-
-// ============================================================
-// HTML ESCAPE
-// ============================================================
-
-function escapeHtml(text) {
-
-    const div = document.createElement("div");
-
-    div.textContent = text;
-
-    return div.innerHTML;
 }
 
 
