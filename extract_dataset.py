@@ -15,7 +15,7 @@ CATEGORIES = {
     "CWE-89": "juliet-cwe89",
 }
 
-SAMPLES_PER_CATEGORY = 50
+SAMPLES_PER_CATEGORY = 250
 
 OUTPUT_DIR = Path("dataset/processed")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -40,7 +40,8 @@ for label, folder_name in CATEGORIES.items():
     # Shuffle files
     random.shuffle(java_files)
 
-    # Take 50
+   
+    # Take 250 files
     selected_files = java_files[:SAMPLES_PER_CATEGORY]
 
     for file_path in selected_files:

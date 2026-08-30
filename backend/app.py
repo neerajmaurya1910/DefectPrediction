@@ -27,7 +27,7 @@ BASE_DIR = os.path.dirname(
 MODEL_PATH = os.path.join(
     BASE_DIR,
     "models",
-    "codebert_model"
+    "codebert_1500_model"
 )
 
 # Source directory

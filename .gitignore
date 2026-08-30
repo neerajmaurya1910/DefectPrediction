@@ -1,24 +1,32 @@
+# Python cache
 __pycache__/
 *.pyc
 
+# Virtual environments
 .venv/
 venv/
 env/
 
+# Jupyter
 .ipynb_checkpoints/
 
-# Model files
+# Old 300-sample model
 models/codebert_model/
-models/codebert_results/
-*.pt
-*.pth
-*.bin
-*.safetensors
 
-# Dataset/model generated files
+# Old experiment/output files
+models/codebert_results/
+
+# Local model backup
+models/codebert_1500_model_backup/
+codebert_1500_model_backup.zip
+
+# Old ML model files
+models/*.pkl
+
+# Dataset generated pickle files
 dataset/processed/*.pkl
 
-# Python cache
+# Python testing
 .pytest_cache/
 
 # VS Code
