@@ -385,6 +385,8 @@ function displayResults(data) {
     console.log("Static analysis issues:", issues);
 
     displayStaticAnalysis(issues);
+    // Display software metrics
+    displaySoftwareMetrics(data.software_metrics || {});
 }
 
 
@@ -492,3 +494,53 @@ checkBackend();
 // ============================================================
 
 console.log("Frontend JavaScript initialized.");
+
+function displaySoftwareMetrics(metrics) {
+    const metricElements = {
+        metricTotalLines: metrics.total_lines,
+        metricLOC: metrics.loc,
+        metricComplexity: metrics.cyclomatic_complexity_estimate,
+        metricMethods: metrics.method_count,
+        metricComments: metrics.comment_lines,
+        metricCommentPercentage: metrics.comment_percentage
+    };
+
+    // Update each metric card safely
+    Object.entries(metricElements).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+
+        if (!element) {
+            console.warn(`Metric element not found: ${id}`);
+            return;
+        }
+
+        if (value === undefined || value === null) {
+            element.textContent = "-";
+        } else {
+            element.textContent =
+                id === "metricCommentPercentage"
+                    ? `${Number(value).toFixed(2)}%`
+                    : String(value);
+        }
+    });
+
+    // Give a simple interpretation of the complexity estimate.
+    // This is an illustrative threshold, not a universal standard.
+    const complexityElement =
+        document.getElementById("complexityLevel");
+
+    if (complexityElement) {
+        const complexity =
+            Number(metrics.cyclomatic_complexity_estimate);
+
+        if (!Number.isFinite(complexity) || complexity < 1) {
+            complexityElement.textContent = "Unavailable";
+        } else if (complexity <= 5) {
+            complexityElement.textContent = "Low estimate";
+        } else if (complexity <= 10) {
+            complexityElement.textContent = "Moderate estimate";
+        } else {
+            complexityElement.textContent = "High estimate";
+        }
+    }
+}
