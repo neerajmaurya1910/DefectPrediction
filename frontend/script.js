@@ -392,25 +392,18 @@ function displayResults(data) {
 // DISPLAY STATIC ANALYSIS
 // ============================================================
 
-function displayStaticAnalysis(issues) {
 
-    // Clear old issues (defensive - already cleared before the
-    // request was sent, but never render on top of stale cards)
+function displayStaticAnalysis(issues) {
+    // Clear previous results
     while (issuesContainer.firstChild) {
         issuesContainer.removeChild(issuesContainer.firstChild);
     }
 
-    // --------------------------------------------------------
-    // ISSUE COUNT
-    // --------------------------------------------------------
-
+    // Update issue count
     issueCount.textContent =
         `${issues.length} ${issues.length === 1 ? "Issue" : "Issues"}`;
 
-    // --------------------------------------------------------
-    // NO ISSUES
-    // --------------------------------------------------------
-
+    // Show message when no issues are found
     if (issues.length === 0) {
         noIssues.classList.remove("hidden");
         return;
@@ -418,41 +411,30 @@ function displayStaticAnalysis(issues) {
 
     noIssues.classList.add("hidden");
 
-    // --------------------------------------------------------
-    // CREATE ISSUE CARDS (built with safe DOM APIs, not
-    // innerHTML, since these strings come straight from the
-    // backend and must never be interpreted as HTML)
-    // --------------------------------------------------------
-
     const KNOWN_SEVERITIES = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
 
     issues.forEach((issue) => {
-
         const type = issue.type || issue.title || "Unknown Issue";
-
         const message =
             issue.message || issue.description || "No description available.";
 
-        // Use the backend's own severity field when present.
-        // Only fall back to a neutral default if the backend
-        // did not provide one at all - never invent/override
-        // a severity the backend already computed.
-        let severity = "LOW";
-
-        if (typeof issue.severity === "string" && issue.severity.trim()) {
-            severity = issue.severity.trim().toUpperCase();
-        }
+        const severity =
+            typeof issue.severity === "string" && issue.severity.trim()
+                ? issue.severity.trim().toUpperCase()
+                : "LOW";
 
         const severityClass = KNOWN_SEVERITIES.includes(severity)
             ? severity.toLowerCase()
             : "low";
 
+        // Create issue card
         const issueCard = document.createElement("div");
         issueCard.className = "issue-item";
 
         const issueContent = document.createElement("div");
         issueContent.className = "issue-content";
 
+        // Issue heading and severity badge
         const issueTop = document.createElement("div");
         issueTop.className = "issue-top";
 
@@ -465,15 +447,34 @@ function displayStaticAnalysis(issues) {
 
         issueTop.appendChild(typeHeading);
         issueTop.appendChild(severityBadge);
+        issueContent.appendChild(issueTop);
 
+        // Issue explanation
         const messageParagraph = document.createElement("p");
         messageParagraph.textContent = message;
-
-        issueContent.appendChild(issueTop);
         issueContent.appendChild(messageParagraph);
 
-        issueCard.appendChild(issueContent);
+        // NEW FEATURE: Display line number
+        if (Number.isInteger(issue.line) && issue.line > 0) {
+            const lineInfo = document.createElement("p");
+            lineInfo.className = "issue-line";
+            lineInfo.textContent = `Line: ${issue.line}`;
+            issueContent.appendChild(lineInfo);
+        }
 
+        // NEW FEATURE: Display affected source code
+        if (typeof issue.code === "string" && issue.code.trim()) {
+            const codeBlock = document.createElement("pre");
+            codeBlock.className = "issue-code";
+
+            const codeText = document.createElement("code");
+            codeText.textContent = issue.code;
+
+            codeBlock.appendChild(codeText);
+            issueContent.appendChild(codeBlock);
+        }
+
+        issueCard.appendChild(issueContent);
         issuesContainer.appendChild(issueCard);
     });
 }
