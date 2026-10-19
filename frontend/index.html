@@ -227,6 +227,66 @@
 
             </div>
 
+            
+<!-- ================= SOFTWARE METRICS DASHBOARD ================= -->
+
+<div class="card metrics-card">
+
+    <div class="section-title">
+        <div>
+            <h2>Software Metrics Dashboard</h2>
+            <p>Quantitative measurements of your Java source code</p>
+        </div>
+    </div>
+
+    <div class="metrics-grid">
+
+        <div class="metric-box">
+            <p class="metric-label">Total Lines</p>
+            <h3 id="metricTotalLines">-</h3>
+        </div>
+
+        <div class="metric-box">
+            <p class="metric-label">Lines of Code (LOC)</p>
+            <h3 id="metricLOC">-</h3>
+        </div>
+
+        <div class="metric-box">
+            <p class="metric-label">Cyclomatic Complexity</p>
+            <h3 id="metricComplexity">-</h3>
+            <span id="complexityLevel" class="metric-note">
+                Awaiting analysis
+            </span>
+        </div>
+
+        <div class="metric-box">
+            <p class="metric-label">Methods Detected</p>
+            <h3 id="metricMethods">-</h3>
+        </div>
+
+        <div class="metric-box">
+            <p class="metric-label">Comment Lines</p>
+            <h3 id="metricComments">-</h3>
+        </div>
+
+        <div class="metric-box">
+            <p class="metric-label">Comment Percentage</p>
+            <h3 id="metricCommentPercentage">-</h3>
+        </div>
+
+    </div>
+
+    <p class="metrics-disclaimer">
+        Metrics are calculated from source-code patterns.
+        Complexity and method counts are estimates and may not
+        capture every Java language construct accurately.
+    </p>
+
+</div>
+
+<!-- ================= END SOFTWARE METRICS DASHBOARD ================= -->
+
+
 
             <!-- ================= STATIC ANALYSIS ================= -->
 

@@ -43,7 +43,7 @@ if SRC_PATH not in sys.path:
 
 # Import static analysis function
 from static_analysis import analyze_java_code
-
+from software_metrics import calculate_software_metrics
 
 # ============================================================
 # FASTAPI APPLICATION
@@ -282,20 +282,17 @@ def analyze_code(request: CodeRequest):
             code
         )
 
-
+        metrics = calculate_software_metrics(code)
         # ----------------------------------------------------
         # FINAL RESPONSE
         # ----------------------------------------------------
 
         return {
-
-            "success": True,
-
-            "prediction": prediction,
-
-            "static_analysis": static_results
-
-        }
+    "success": True,
+    "prediction": prediction,
+    "static_analysis": static_results,
+    "software_metrics": metrics
+}
 
 
     except Exception as e:
