@@ -10,7 +10,7 @@ from transformers import (
 
 import sys
 import os
-
+from src.acri import calculate_acri
 
 # ============================================================
 # PATH SETUP
@@ -243,69 +243,56 @@ def predict_defect(code: str):
 # ANALYZE CODE ENDPOINT
 # ============================================================
 
+
 @app.post("/analyze")
 def analyze_code(request: CodeRequest):
-
-    # Get Java code
     code = request.code
 
-    # --------------------------------------------------------
-    # VALIDATE INPUT
-    # --------------------------------------------------------
-
     if not code or not code.strip():
-
         return {
             "success": False,
             "message": "Code cannot be empty.",
             "prediction": None,
-            "static_analysis": []
+            "static_analysis": [],
+            "software_metrics": None,
+            "acri": None
         }
 
-
     try:
+        # Static analysis
+        static_results = analyze_java_code(code)
 
-        # ----------------------------------------------------
-        # STATIC ANALYSIS
-        # ----------------------------------------------------
+        # CodeBERT prediction
+        prediction = predict_defect(code)
 
-        static_results = analyze_java_code(
-            code
-        )
-
-
-        # ----------------------------------------------------
-        # CODEBERT PREDICTION
-        # ----------------------------------------------------
-
-        prediction = predict_defect(
-            code
-        )
-
+        # Software metrics
         metrics = calculate_software_metrics(code)
-        # ----------------------------------------------------
-        # FINAL RESPONSE
-        # ----------------------------------------------------
 
+        # AI-Assisted Code Risk Index
+        acri_result = calculate_acri(
+            static_analysis=static_results,
+            software_metrics=metrics,
+            prediction=prediction
+        )
+
+        # Final response
         return {
-    "success": True,
-    "prediction": prediction,
-    "static_analysis": static_results,
-    "software_metrics": metrics
-}
-
+            "success": True,
+            "prediction": prediction,
+            "static_analysis": static_results,
+            "software_metrics": metrics,
+            "acri": acri_result
+        }
 
     except Exception as e:
-
-        print(
-            "Error while analyzing code:",
-            str(e)
-        )
-
+        print("Error while analyzing code:", str(e))
         raise HTTPException(
             status_code=500,
             detail=f"Error analyzing code: {str(e)}"
         )
+
+
+    
 
 
 # ============================================================

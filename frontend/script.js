@@ -93,6 +93,32 @@ clearButton.addEventListener("click", function () {
     resultsSection.classList.add("hidden");
 
     clearResults();
+
+    const acriScore = document.getElementById("acriScore");
+    const acriPriority = document.getElementById("acriPriority");
+    const acriBar = document.getElementById("acriBar");
+    const acriExplanation = document.getElementById("acriExplanation");
+
+    if (acriScore) acriScore.textContent = "- / 100";
+
+    if (acriPriority) {
+        acriPriority.textContent = "Awaiting analysis";
+        acriPriority.className = "acri-priority";
+    }
+
+    if (acriBar) acriBar.style.width = "0%";
+
+    if (acriExplanation) {
+        acriExplanation.textContent = "Analyze Java code to calculate ACRI.";
+    }
+
+    const acriStatic = document.getElementById("acriStaticScore");
+    const acriComplexity = document.getElementById("acriComplexityScore");
+    const acriModel = document.getElementById("acriModelScore");
+
+    if (acriStatic) acriStatic.textContent = "-";
+    if (acriComplexity) acriComplexity.textContent = "-";
+    if (acriModel) acriModel.textContent = "-";
 });
 
 
@@ -387,6 +413,7 @@ function displayResults(data) {
     displayStaticAnalysis(issues);
     // Display software metrics
     displaySoftwareMetrics(data.software_metrics || {});
+    displayACRI(data.acri);
 }
 
 
@@ -542,5 +569,68 @@ function displaySoftwareMetrics(metrics) {
         } else {
             complexityElement.textContent = "High estimate";
         }
+    }
+}
+
+
+function displayACRI(acri) {
+    const scoreElement = document.getElementById("acriScore");
+    const priorityElement = document.getElementById("acriPriority");
+    const barElement = document.getElementById("acriBar");
+    const explanationElement = document.getElementById("acriExplanation");
+    const staticElement = document.getElementById("acriStaticScore");
+    const complexityElement = document.getElementById("acriComplexityScore");
+    const modelElement = document.getElementById("acriModelScore");
+    if (!acri || !Number.isFinite(Number(acri.score))) {
+        if (scoreElement) scoreElement.textContent = "Unavailable";
+        if (priorityElement) priorityElement.textContent = "-";
+        if (barElement) barElement.style.width = "0%";
+        if (explanationElement) {
+            explanationElement.textContent = "ACRI was not returned by the backend.";
+        }
+        return;
+    }
+
+    const score = Math.max(0, Math.min(100, Number(acri.score)));
+
+    if (scoreElement) {
+        scoreElement.textContent = score.toFixed(2) + " / 100";
+    }
+
+    if (priorityElement) {
+        const priority = acri.priority || "Unclassified";
+
+        priorityElement.textContent = priority;
+        priorityElement.className =
+            "acri-priority acri-" + priority.toLowerCase();
+    }
+
+    if (barElement) {
+        barElement.style.width = score + "%";
+    }
+
+    
+    const components = acri.components || {};
+
+    if (staticElement) {
+        staticElement.textContent =
+            Number(components.static_finding_severity_score ?? 0).toFixed(2);
+    }
+
+    if (complexityElement) {
+        complexityElement.textContent =
+            Number(components.complexity_risk ?? 0).toFixed(2);
+    }
+
+    if (modelElement) {
+        modelElement.textContent =
+            Number(components.model_signal ?? 0).toFixed(2);
+    }
+
+
+    if (explanationElement) {
+        explanationElement.textContent =
+            acri.explanation ||
+            "This score combines static findings, complexity, and the AI model signal.";
     }
 }

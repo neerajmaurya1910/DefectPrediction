@@ -287,6 +287,68 @@
 <!-- ================= END SOFTWARE METRICS DASHBOARD ================= -->
 
 
+<!-- ================= ACRI RISK DASHBOARD ================= -->
+
+<div class="card acri-card">
+
+    <div class="section-title">
+        <div>
+            <h2>AI-Assisted Code Risk Index (ACRI)</h2>
+            <p>
+                Combined code-review priority based on static findings,
+                complexity, and the AI model signal.
+            </p>
+        </div>
+    </div>
+
+    <div class="acri-main">
+
+        <div class="acri-score-box">
+            <p class="metric-label">Overall Risk Score</p>
+            <h3 id="acriScore">- / 100</h3>
+            <span id="acriPriority" class="acri-priority">
+                Awaiting analysis
+            </span>
+        </div>
+
+        <div class="acri-chart-box">
+            <div class="acri-progress">
+                <div id="acriBar" class="acri-progress-bar"></div>
+            </div>
+            <p class="acri-scale">
+                <span>0 — Low</span>
+                <span>100 — High</span>
+            </p>
+        </div>
+
+    </div>
+
+    <div class="acri-components">
+        <div class="acri-component">
+            <span>Static Finding Severity</span>
+            <strong id="acriStaticScore">-</strong>
+        </div>
+
+        <div class="acri-component">
+            <span>Complexity Risk</span>
+            <strong id="acriComplexityScore">-</strong>
+        </div>
+
+        <div class="acri-component">
+            <span>AI Model Signal</span>
+            <strong id="acriModelScore">-</strong>
+        </div>
+    </div>
+
+    <p id="acriExplanation" class="acri-explanation">
+        Analyze Java code to calculate ACRI.
+    </p>
+
+    
+</div>
+
+<!-- ================= END ACRI RISK DASHBOARD ================= -->
+
 
             <!-- ================= STATIC ANALYSIS ================= -->
 
